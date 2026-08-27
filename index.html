@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Collatz Conjecture 3D Visualizer | 3n + 1 Dynamics</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./index.css" />
+</head>
+<body>
+
+  <!-- 3D Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Header Bar -->
+  <header class="header-bar">
+    <div class="brand-icon">3n</div>
+    <div>
+      <h1 class="brand-title">Collatz 3D Explorer</h1>
+      <p class="brand-subtitle">Interactive 3n + 1 Hailstone Sequence Visualizer</p>
+    </div>
+  </header>
+
+  <!-- Sidebar Controls & Stats -->
+  <aside class="sidebar">
+    
+    <!-- Input Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><i data-lucide="sliders"></i> Starting Number</span>
+        <button id="random-btn" class="pill-btn" title="Random Number">Random</button>
+      </div>
+
+      <div class="input-group">
+        <input type="number" id="number-input" class="input-box" value="27" min="1" step="1" />
+        <button id="calculate-btn" class="btn-primary">
+          <i data-lucide="sparkles"></i> Calculate
+        </button>
+      </div>
+
+      <div class="select-control" style="margin-bottom: 10px;">
+        <select id="preset-select">
+          <option value="" disabled selected>-- Select Famous Presets --</option>
+        </select>
+      </div>
+
+      <div class="preset-pills">
+        <button class="pill-btn active" data-val="27">n = 27</button>
+        <button class="pill-btn" data-val="97">n = 97</button>
+        <button class="pill-btn" data-val="871">n = 871</button>
+        <button class="pill-btn" data-val="6171">n = 6171</button>
+        <button class="pill-btn" data-val="77031">n = 77031</button>
+      </div>
+    </div>
+
+    <!-- Mode & Options Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><i data-lucide="layers"></i> View Mode</span>
+      </div>
+
+      <div class="mode-grid">
+        <button class="mode-btn active" data-mode="orbit">
+          <i data-lucide="activity"></i>
+          <span>3D Orbit</span>
+        </button>
+        <button class="mode-btn" data-mode="tree">
+          <i data-lucide="git-fork"></i>
+          <span>3D Tree</span>
+        </button>
+        <button class="mode-btn" data-mode="landscape">
+          <i data-lucide="bar-chart-3"></i>
+          <span>Landscape</span>
+        </button>
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-top: 12px;">
+        <button id="scale-toggle-btn" class="pill-btn" style="flex:1;">Scale: Logarithmic</button>
+        <button id="shortcut-toggle-btn" class="pill-btn" style="flex:1;">Mode: Standard 3n+1</button>
+      </div>
+    </div>
+
+    <!-- Metrics Results Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><i data-lucide="pie-chart"></i> Sequence Statistics</span>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-box cyan">
+          <div class="metric-label">Stopping Time</div>
+          <div class="metric-value" id="stat-steps">111</div>
+          <div class="metric-sub">Steps to reach 1</div>
+        </div>
+
+        <div class="metric-box coral">
+          <div class="metric-label">Peak Maximum</div>
+          <div class="metric-value" id="stat-peak">9,232</div>
+          <div class="metric-sub" id="stat-peak-ratio">341.9x start value</div>
+        </div>
+
+        <div class="metric-box gold">
+          <div class="metric-label">Odd Steps (3n+1)</div>
+          <div class="metric-value" id="stat-odd">41</div>
+          <div class="metric-sub" id="stat-odd-pct">36.9% of total</div>
+        </div>
+
+        <div class="metric-box purple">
+          <div class="metric-label">Even Steps (n/2)</div>
+          <div class="metric-value" id="stat-even">70</div>
+          <div class="metric-sub" id="stat-even-pct">63.1% of total</div>
+        </div>
+      </div>
+
+      <div class="ratio-container">
+        <div class="ratio-labels">
+          <span>Ascents (3n+1): <strong id="ratio-odd-lbl">36.9%</strong></span>
+          <span>Descents (n/2): <strong id="ratio-even-lbl">63.1%</strong></span>
+        </div>
+        <div class="ratio-bar">
+          <div id="ratio-odd-fill" class="ratio-fill-odd" style="width: 36.9%;"></div>
+          <div id="ratio-even-fill" class="ratio-fill-even" style="width: 63.1%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions & Info Card -->
+    <div class="card" style="display: flex; gap: 8px;">
+      <button id="open-table-btn" class="pill-btn" style="flex:1; padding: 8px;">
+        <i data-lucide="table"></i> Step Data Table
+      </button>
+      <button id="open-math-btn" class="pill-btn" style="flex:1; padding: 8px;">
+        <i data-lucide="help-circle"></i> Collatz Math
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- Playback Control Dock (Bottom Center) -->
+  <div class="controls-bar">
+    <button id="reset-cam-btn" class="btn-icon" title="Reset Camera">
+      <i data-lucide="rotate-ccw"></i>
+    </button>
+    <button id="step-prev-btn" class="btn-icon" title="Previous Step">
+      <i data-lucide="skip-back"></i>
+    </button>
+
+    <button id="play-btn" class="btn-icon play-btn" title="Play / Pause Playback">
+      <i data-lucide="play" id="play-icon"></i>
+    </button>
+
+    <button id="step-next-btn" class="btn-icon" title="Next Step">
+      <i data-lucide="skip-forward"></i>
+    </button>
+
+    <div class="step-indicator">
+      Step: <span id="current-step-num">0</span> / <span id="total-step-num">111</span>
+    </div>
+
+    <div class="speed-slider">
+      <span>Speed</span>
+      <input type="range" id="speed-range" min="0.25" max="3" step="0.25" value="1" />
+      <span id="speed-val">1x</span>
+    </div>
+  </div>
+
+  <!-- Slide-Out Data Table Drawer -->
+  <div id="table-drawer" class="drawer">
+    <div class="drawer-header">
+      <h2 class="drawer-title">Step-by-Step Trajectory</h2>
+      <div style="display:flex; gap:8px;">
+        <button id="export-csv-btn" class="pill-btn"><i data-lucide="download"></i> Export CSV</button>
+        <button id="close-drawer-btn" class="btn-icon" style="width:30px; height:30px;"><i data-lucide="x"></i></button>
+      </div>
+    </div>
+    <div class="drawer-body">
+      <table class="table-container">
+        <thead>
+          <tr>
+            <th>Step</th>
+            <th>Value</th>
+            <th>Operation</th>
+            <th>Formula</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <!-- Populated dynamically -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Educational Info Modal -->
+  <div id="math-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>About the Collatz Conjecture</h2>
+        <button id="close-modal-btn" class="btn-icon" style="width:32px; height:32px;"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p>The <strong>Collatz Conjecture</strong> (also known as the <em>\(3n + 1\) problem</em>, <em>Hailstone sequence</em>, or <em>Syracuse problem</em>) is one of mathematics' most infamous open problems, proposed by Lothar Collatz in 1937.</p>
+        
+        <h3 style="margin: 14px 0 6px; color: var(--accent-cyan);">The Rules:</h3>
+        <p>Take any positive integer <code>n</code>:</p>
+        <ul>
+          <li>If <code>n</code> is <strong>even</strong>, divide it by 2: <code>f(n) = n / 2</code></li>
+          <li>If <code>n</code> is <strong>odd</strong>, multiply by 3 and add 1: <code>f(n) = 3n + 1</code></li>
+        </ul>
+
+        <h3 style="margin: 14px 0 6px; color: var(--accent-coral);">The Conjecture:</h3>
+        <p>No matter what starting positive integer <code>n</code> you choose, the sequence will <strong>always eventually reach 1</strong> (and enter the repeating cycle 4 → 2 → 1).</p>
+
+        <h3 style="margin: 14px 0 6px; color: var(--accent-gold);">Why "Hailstone"?</h3>
+        <p>The numbers bounce up and down dramatically—like hailstones inside a thunderstorm cloud—before eventually descending to Earth (the number 1).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tooltip -->
+  <div id="tooltip" class="tooltip-3d"></div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
